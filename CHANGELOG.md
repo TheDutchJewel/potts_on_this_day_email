@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 - 2026-07-06
+
+- Fixes the Control panel link so it uses the webtrees admin route and works more reliably with pretty URLs.
+- Condenses the My Page help text into a single clearer explanation block.
+- Greys out relationship root and maximum-step fields when the relationship filter is switched off.
+- Adds an optional living-people-only filter for personal and manual-recipient emails.
+- Makes generated email detail strings more translation-ready, including birthday, death, wedding-anniversary and relationship detail text.
+- Improves German translation coverage for the new and previously missed strings.
+
 ## 1.0.0 - 2026-07-05
 
 - Promotes the tested 1.0.0-beta.10 build to a regular stable release.

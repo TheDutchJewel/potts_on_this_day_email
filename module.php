@@ -66,7 +66,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
 
     public function customModuleVersion(): string
     {
-        return '1.0.0';
+        return '1.0.1';
     }
 
     public function customModuleLatestVersion(): string
@@ -270,7 +270,6 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         return '<div class="card wt-block potts-on-this-day-email-preview mb-3">'
             . '<div class="card-header"><h2 class="card-title h4 mb-0">' . $this->te('On This Day daily email') . '</h2></div>'
             . '<div class="card-body">'
-            . '<div class="alert alert-info small mb-3"><strong>' . $this->te('What this block does:') . '</strong> ' . $this->te("It lets you choose whether you want a daily On This Day email. The email includes births, deaths and marriages from the family tree that happened on today's date, filtered around the person and relationship distance you choose below. You will only receive an email on days where there is something to report.") . '</div>'
             . $alert
             . $buttons
             . $personal_html
@@ -494,8 +493,10 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         $max_steps = (int) ($_GET['potts_otd_relationship_max_steps'] ?? 4);
         $max_steps = max(0, min(20, $max_steps));
         $enabled = (string) ($_GET['potts_otd_relationship_enabled'] ?? '') === '1';
+        $living_people_only = (string) ($_GET['potts_otd_living_people_only'] ?? '') === '1';
 
         $settings['relationship_filter_enabled'] = $enabled ? '1' : '0';
+        $settings['living_people_only'] = $living_people_only ? '1' : '0';
         $settings['relationship_root_xref'] = $root_xref;
         $settings['relationship_max_steps'] = (string) $max_steps;
 
@@ -526,6 +527,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         $max_steps = (int) ($_GET['potts_otd_user_relationship_max_steps'] ?? 4);
         $max_steps = max(0, min(20, $max_steps));
         $enabled = (string) ($_GET['potts_otd_user_relationship_enabled'] ?? '') === '1';
+        $living_people_only = (string) ($_GET['potts_otd_user_living_people_only'] ?? '') === '1';
 
         $root_candidate = $root_xref !== '' ? Registry::individualFactory()->make($root_xref, $tree) : null;
         if ($root_xref !== '' && !$root_candidate instanceof Individual) {
@@ -545,6 +547,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             'personal_preview_enabled' => '1',
             'daily_email_enabled' => $daily_email_enabled ? '1' : '0',
             'relationship_filter_enabled' => $enabled ? '1' : '0',
+            'living_people_only' => $living_people_only ? '1' : '0',
             'relationship_root_xref' => $root_xref,
             'relationship_max_steps' => (string) $max_steps,
             'email' => $recipient_email,
@@ -562,6 +565,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     {
         $daily_email_enabled = $this->dailyEmailEnabled($settings);
         $enabled = $this->relationshipFilterEnabled($settings);
+        $living_people_only = $this->livingPeopleOnlyEnabled($settings);
         $root_xref = $this->relationshipRootXref($settings, '');
         $max_steps = $this->relationshipMaxSteps($settings);
         $linked_xref = $this->linkedIndividualXref($tree, $user);
@@ -576,6 +580,9 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
 
         $daily_email_checked = $daily_email_enabled ? ' checked' : '';
         $relationship_checked = $enabled ? ' checked' : '';
+        $living_people_checked = $living_people_only ? ' checked' : '';
+        $relationship_field_attr = $enabled ? '' : ' readonly aria-disabled="true"';
+        $relationship_field_class = $enabled ? 'form-control' : 'form-control bg-body-secondary text-muted';
         $use_linked_button = '';
         if ($linked_xref !== '' && $linked_xref !== $root_xref) {
             $use_linked_url = $this->currentPageUrl([
@@ -583,6 +590,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
                 'potts_otd_block_id' => (string) $block_id,
                 'potts_otd_user_daily_email_enabled' => $daily_email_enabled ? '1' : '0',
                 'potts_otd_user_relationship_enabled' => '1',
+                'potts_otd_user_living_people_only' => $living_people_only ? '1' : '0',
                 'potts_otd_user_relationship_root_xref' => $linked_xref,
                 'potts_otd_user_relationship_max_steps' => (string) $max_steps,
             ]);
@@ -596,7 +604,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         return '<div class="card mb-3">'
             . '<div class="card-header"><strong>' . $this->te('My On This Day daily email') . '</strong> ' . $email_badge . '</div>'
             . '<div class="card-body small">'
-            . '<p class="mb-2"><strong>' . $this->te('What happens if I turn on daily email?') . '</strong> ' . $this->te('You will receive your own personalised On This Day summary at your webtrees account email address. It is only sent on days where there are matching family events for your settings. You can turn it off here at any time.') . '</p>'
+            . '<div class="alert alert-info mb-3">' . $this->te('Choose whether you want a daily On This Day email. It is only sent on days with matching births, deaths or marriages, using the relationship and living-person filters below.') . '</div>'
             . '<p class="mb-2"><strong>' . $this->te('Current root:') . '</strong> ' . $this->esc($root_label) . '</p>'
             . '<p class="text-muted mb-2">' . $linked_text . '</p>'
             . $use_linked_button
@@ -604,13 +612,14 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             . $this->currentQueryHiddenFields(['potts_otd_user_relationship_action' => 'save', 'potts_otd_block_id' => (string) $block_id])
             . '<div class="row g-2 align-items-end">'
             . '<div class="col-md-3"><div class="form-check mb-2"><input class="form-check-input" id="potts_otd_user_daily_email_enabled" name="potts_otd_user_daily_email_enabled" type="checkbox" value="1"' . $daily_email_checked . '><label class="form-check-label" for="potts_otd_user_daily_email_enabled">' . $this->te('Email me daily') . '</label></div></div>'
-            . '<div class="col-md-3"><div class="form-check mb-2"><input class="form-check-input" id="potts_otd_user_relationship_enabled" name="potts_otd_user_relationship_enabled" type="checkbox" value="1"' . $relationship_checked . '><label class="form-check-label" for="potts_otd_user_relationship_enabled">' . $this->te('Use relationship filter') . '</label></div></div>'
-            . '<div class="col-md-3"><label class="form-label" for="potts_otd_user_relationship_root_xref">' . $this->te('My individual ID') . '</label><input class="form-control" id="potts_otd_user_relationship_root_xref" name="potts_otd_user_relationship_root_xref" type="text" value="' . $this->esc($root_xref) . '" placeholder="X123"></div>'
-            . '<div class="col-md-3"><label class="form-label" for="potts_otd_user_relationship_max_steps">' . $this->te('Maximum steps') . '</label><input class="form-control" id="potts_otd_user_relationship_max_steps" name="potts_otd_user_relationship_max_steps" type="number" min="0" max="20" value="' . $this->esc((string) $max_steps) . '"></div>'
+            . '<div class="col-md-3"><div class="form-check mb-2"><input class="form-check-input" id="potts_otd_user_relationship_enabled" name="potts_otd_user_relationship_enabled" type="checkbox" value="1"' . $relationship_checked . ' data-potts-toggle="potts-otd-user-relationship-fields"><label class="form-check-label" for="potts_otd_user_relationship_enabled">' . $this->te('Use relationship filter') . '</label></div></div>'
+            . '<div class="col-md-3"><div class="form-check mb-2"><input class="form-check-input" id="potts_otd_user_living_people_only" name="potts_otd_user_living_people_only" type="checkbox" value="1"' . $living_people_checked . '><label class="form-check-label" for="potts_otd_user_living_people_only">' . $this->te('Only include living people') . '</label></div></div>'
+            . '<div class="col-md-3 potts-otd-user-relationship-fields"><label class="form-label" for="potts_otd_user_relationship_root_xref">' . $this->te('My individual ID') . '</label><input class="' . $relationship_field_class . '" id="potts_otd_user_relationship_root_xref" name="potts_otd_user_relationship_root_xref" type="text" value="' . $this->esc($root_xref) . '" placeholder="X123"' . $relationship_field_attr . '></div>'
+            . '<div class="col-md-3 potts-otd-user-relationship-fields"><label class="form-label" for="potts_otd_user_relationship_max_steps">' . $this->te('Maximum steps') . '</label><input class="' . $relationship_field_class . '" id="potts_otd_user_relationship_max_steps" name="potts_otd_user_relationship_max_steps" type="number" min="0" max="20" value="' . $this->esc((string) $max_steps) . '"' . $relationship_field_attr . '></div>'
             . '<div class="col-md-3"><button type="submit" class="btn btn-success w-100">' . $this->te('Save') . '</button></div>'
             . '</div>'
             . '</form>'
-            . '<p class="text-muted mt-2 mb-0">' . $this->te('These settings are personal to your webtrees login. You will only receive emails if you tick Email me daily and there are matching family events. The site manager can still maintain a separate list for family update emails.') . '</p>'
+            . '<script>(function(){function t(c){var x=document.querySelector("[data-potts-toggle=\""+c+"\"]");if(!x)return;var f=document.querySelectorAll("."+c+" input");function u(){f.forEach(function(i){i.readOnly=!x.checked;i.setAttribute("aria-disabled",x.checked?"false":"true");i.classList.toggle("bg-body-secondary",!x.checked);i.classList.toggle("text-muted",!x.checked);});}x.addEventListener("change",u);u();}t("potts-otd-user-relationship-fields");t("potts-otd-relationship-fields");})();</script>'
             . '</div>'
             . '</div>';
     }
@@ -618,6 +627,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     private function relationshipSettingsHtml(Tree $tree, array $settings, int $block_id): string
     {
         $enabled = $this->relationshipFilterEnabled($settings);
+        $living_people_only = $this->livingPeopleOnlyEnabled($settings);
         $root_xref = $this->relationshipRootXref($settings);
         $max_steps = $this->relationshipMaxSteps($settings);
         $root = Registry::individualFactory()->make($root_xref, $tree);
@@ -626,6 +636,9 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             : $this->t('Record not found: %s', $root_xref);
 
         $checked = $enabled ? ' checked' : '';
+        $living_people_checked = $living_people_only ? ' checked' : '';
+        $relationship_field_attr = $enabled ? '' : ' readonly aria-disabled="true"';
+        $relationship_field_class = $enabled ? 'form-control' : 'form-control bg-body-secondary text-muted';
 
         return '<div class="card mb-3">'
             . '<div class="card-header"><strong>' . $this->te('Manual recipient relationship filter') . '</strong></div>'
@@ -635,13 +648,15 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             . '<form method="get" action="' . $this->esc($this->currentPagePath()) . '" class="border rounded p-3 bg-light">'
             . $this->currentQueryHiddenFields(['potts_otd_relationship_action' => 'save', 'potts_otd_block_id' => (string) $block_id])
             . '<div class="row g-2 align-items-end">'
-            . '<div class="col-md-3"><div class="form-check mb-2"><input class="form-check-input" id="potts_otd_relationship_enabled" name="potts_otd_relationship_enabled" type="checkbox" value="1"' . $checked . '><label class="form-check-label" for="potts_otd_relationship_enabled">' . $this->te('Enable filter') . '</label></div></div>'
-            . '<div class="col-md-3"><label class="form-label" for="potts_otd_relationship_root_xref">' . $this->te('Root individual ID') . '</label><input class="form-control" id="potts_otd_relationship_root_xref" name="potts_otd_relationship_root_xref" type="text" value="' . $this->esc($root_xref) . '" placeholder="X123"></div>'
-            . '<div class="col-md-3"><label class="form-label" for="potts_otd_relationship_max_steps">' . $this->te('Maximum steps') . '</label><input class="form-control" id="potts_otd_relationship_max_steps" name="potts_otd_relationship_max_steps" type="number" min="0" max="20" value="' . $this->esc((string) $max_steps) . '"></div>'
+            . '<div class="col-md-3"><div class="form-check mb-2"><input class="form-check-input" id="potts_otd_relationship_enabled" name="potts_otd_relationship_enabled" type="checkbox" value="1"' . $checked . ' data-potts-toggle="potts-otd-relationship-fields"><label class="form-check-label" for="potts_otd_relationship_enabled">' . $this->te('Enable filter') . '</label></div></div>'
+            . '<div class="col-md-3"><div class="form-check mb-2"><input class="form-check-input" id="potts_otd_living_people_only" name="potts_otd_living_people_only" type="checkbox" value="1"' . $living_people_checked . '><label class="form-check-label" for="potts_otd_living_people_only">' . $this->te('Only include living people') . '</label></div></div>'
+            . '<div class="col-md-3 potts-otd-relationship-fields"><label class="form-label" for="potts_otd_relationship_root_xref">' . $this->te('Root individual ID') . '</label><input class="' . $relationship_field_class . '" id="potts_otd_relationship_root_xref" name="potts_otd_relationship_root_xref" type="text" value="' . $this->esc($root_xref) . '" placeholder="X123"' . $relationship_field_attr . '></div>'
+            . '<div class="col-md-3 potts-otd-relationship-fields"><label class="form-label" for="potts_otd_relationship_max_steps">' . $this->te('Maximum steps') . '</label><input class="' . $relationship_field_class . '" id="potts_otd_relationship_max_steps" name="potts_otd_relationship_max_steps" type="number" min="0" max="20" value="' . $this->esc((string) $max_steps) . '"' . $relationship_field_attr . '></div>'
             . '<div class="col-md-3"><button type="submit" class="btn btn-success w-100">' . $this->te('Save filter') . '</button></div>'
             . '</div>'
             . '</form>'
-            . '<p class="text-muted mt-2 mb-0">' . $this->te('Choose an individual from this tree and a maximum relationship distance.') . '</p>'
+            . '<script>(function(){function t(c){var x=document.querySelector("[data-potts-toggle=\""+c+"\"]");if(!x)return;var f=document.querySelectorAll("."+c+" input");function u(){f.forEach(function(i){i.readOnly=!x.checked;i.setAttribute("aria-disabled",x.checked?"false":"true");i.classList.toggle("bg-body-secondary",!x.checked);i.classList.toggle("text-muted",!x.checked);});}x.addEventListener("change",u);u();}t("potts-otd-user-relationship-fields");t("potts-otd-relationship-fields");})();</script>'
+            . '<p class="text-muted mt-2 mb-0">' . $this->te('Choose an individual from this tree and a maximum relationship distance. Tick Only include living people to exclude death events and older birth or marriage anniversaries where the person or spouses are no longer living.') . '</p>'
             . '</div>'
             . '</div>';
     }
@@ -1301,6 +1316,28 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         ];
     }
 
+
+    private function filterFactsByLivingPeople(Collection $facts): Collection
+    {
+        return $facts->filter(fn (Fact $fact): bool => $this->factHasOnlyLivingPeople($fact))->values();
+    }
+
+    private function factHasOnlyLivingPeople(Fact $fact): bool
+    {
+        $individuals = $this->individualsForFact($fact);
+        if ($individuals === []) {
+            return false;
+        }
+
+        foreach ($individuals as $individual) {
+            if ($individual->isDead()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Return historical facts for the same year and country/region as a family-tree event.
      * The CSV files are read from the sibling potts_historical_facts module.
@@ -1310,6 +1347,10 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     private function filterFactsByRelationship(Tree $tree, Collection $facts, ?array $settings = null): Collection
     {
         $settings ??= $this->settings();
+        if ($this->livingPeopleOnlyEnabled($settings)) {
+            $facts = $this->filterFactsByLivingPeople($facts);
+        }
+
         if (!$this->relationshipFilterEnabled($settings)) {
             return $facts;
         }
@@ -1509,15 +1550,15 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         $settings ??= $this->settings();
         $root_xref = $this->relationshipRootXref($settings, '');
         if ($root_xref === '') {
-            return 'Relationship';
+            return $this->t('Relationship');
         }
 
         $root = Registry::individualFactory()->make($root_xref, $tree);
         if (!$root instanceof Individual) {
-            return 'Relationship to root person';
+            return $this->t('Relationship to root person');
         }
 
-        return 'Relationship to ' . $this->plain($root->fullName());
+        return $this->t('Relationship to %s', $this->plain($root->fullName()));
     }
 
     private function relationshipNoteText(Tree $tree, Fact $fact, ?array $settings, string $relationship_label): string
@@ -1541,12 +1582,12 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             }
         }
 
-        $text = 'Relationship: ' . implode('; ', $sentences);
+        $text = $this->t('Relationship:') . ' ' . implode('; ', $sentences);
         if ($relationship_links !== []) {
-            $text .= PHP_EOL . 'Relationship chart: ' . implode(PHP_EOL . 'Relationship chart: ', array_values(array_unique($relationship_links)));
+            $text .= PHP_EOL . $this->t('Relationship chart:') . ' ' . implode(PHP_EOL . $this->t('Relationship chart:') . ' ', array_values(array_unique($relationship_links)));
         }
         if ($common_ancestor_lines !== []) {
-            $text .= PHP_EOL . '(Common ancestors: ' . implode('; ', array_keys($common_ancestor_lines)) . ')';
+            $text .= PHP_EOL . $this->t('(Common ancestors: %s)', implode('; ', array_keys($common_ancestor_lines)));
         }
 
         return $text;
@@ -1573,9 +1614,9 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             }
         }
 
-        $html = '<span style="color:#555;font-size:0.95em">Relationship: ' . implode('; ', $sentences);
+        $html = '<span style="color:#555;font-size:0.95em">' . $this->te('Relationship:') . ' ' . implode('; ', $sentences);
         if ($common_ancestor_lines !== []) {
-            $html .= '<br><span style="color:#777">(Common ancestors: ' . $this->esc(implode('; ', array_keys($common_ancestor_lines))) . ')</span>';
+            $html .= '<br><span style="color:#777">' . $this->te('(Common ancestors: %s)', implode('; ', array_keys($common_ancestor_lines))) . '</span>';
         }
         $html .= '</span>';
 
@@ -1626,14 +1667,14 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     private function relationshipSentence(string $target_name, string $description, string $root_name, bool $to_you): string
     {
         if ($description === 'self') {
-            return $to_you ? $target_name . ' is you.' : $target_name . ' is ' . $root_name . '.';
+            return $to_you ? $this->t('%s is you.', $target_name) : $this->t('%s is %s.', $target_name, $root_name);
         }
 
         if ($to_you) {
-            return $target_name . ' is your ' . $description . '.';
+            return $this->t('%s is your %s.', $target_name, $description);
         }
 
-        return $target_name . ' is ' . $this->possessiveName($root_name) . ' ' . $description . '.';
+        return $this->t('%s is %s %s.', $target_name, $this->possessiveName($root_name), $description);
     }
 
     private function relationshipChartUrl(Tree $tree, Individual $root, Individual $target): string
@@ -1994,6 +2035,13 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         };
     }
 
+    private function yearsText(int $years): string
+    {
+        return $years === 1
+            ? $this->t('%s year', (string) $years)
+            : $this->t('%s years', (string) $years);
+    }
+
     private function ordinalNumber(int $number): string
     {
         $abs = abs($number);
@@ -2053,17 +2101,17 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         if ($death_year !== null) {
             $age_at_death = $death_year - $birth_year;
             $years_since_death = $current_year - $death_year;
-            $parts = [$name . ' would have been ' . $birthday_age . ' today'];
+            $parts = [$this->t('%s would have been %s today', $name, (string) $birthday_age)];
             if ($age_at_death >= 0) {
-                $parts[] = $this->pronoun($record, 'He', 'She', 'They') . ' died aged ' . $age_at_death;
+                $parts[] = $this->t('%s died aged %s', $this->pronoun($record, $this->t('He'), $this->t('She'), $this->t('They')), (string) $age_at_death);
             }
             if ($years_since_death >= 0) {
-                $parts[] = $this->possessivePronoun($record, 'His', 'Her', 'Their') . ' death was ' . $years_since_death . ' year' . ($years_since_death === 1 ? '' : 's') . ' ago';
+                $parts[] = $this->t('%s death was %s ago', $this->possessivePronoun($record, $this->t('His'), $this->t('Her'), $this->t('Their')), $this->yearsText($years_since_death));
             }
             return implode('. ', $parts) . '.';
         }
 
-        return $name . ' turns ' . $birthday_age . ' today.';
+        return $this->t('%s turns %s today.', $name, (string) $birthday_age);
     }
 
     private function deathDetailText(Fact $fact): string
@@ -2086,13 +2134,13 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         if ($birth_year !== null) {
             $age_at_death = $death_year - $birth_year;
             if ($age_at_death >= 0) {
-                $parts[] = $name . ' was ' . $age_at_death . ' when ' . $this->pronoun($record, 'he', 'she', 'they') . ' died';
+                $parts[] = $this->t('%s was %s when %s died', $name, (string) $age_at_death, $this->pronoun($record, $this->t('he'), $this->t('she'), $this->t('they')));
             }
         }
 
         $years_since_death = $current_year - $death_year;
         if ($years_since_death >= 0) {
-            $parts[] = $this->possessivePronoun($record, 'His', 'Her', 'Their') . ' death was ' . $years_since_death . ' year' . ($years_since_death === 1 ? '' : 's') . ' ago';
+            $parts[] = $this->t('%s death was %s ago', $this->possessivePronoun($record, $this->t('His'), $this->t('Her'), $this->t('Their')), $this->yearsText($years_since_death));
         }
 
         return $parts === [] ? '' : implode('. ', $parts) . '.';
@@ -2123,7 +2171,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             }
         }
 
-        $prefix = 'Today is their ' . $this->ordinalNumber($anniversary) . ' wedding anniversary.';
+        $prefix = $this->t('Today is their %s wedding anniversary.', $this->ordinalNumber($anniversary));
         if ($spouses === []) {
             return $prefix;
         }
@@ -2141,8 +2189,8 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
         if ($earliest_death_year !== null && $earliest_deceased instanceof Individual) {
             $married_years = max(0, $earliest_death_year - $marriage_year);
             $years_since_death = $current_year - $earliest_death_year;
-            $death_note = $years_since_death >= 0 ? ' That was ' . $years_since_death . ' year' . ($years_since_death === 1 ? '' : 's') . ' ago.' : '';
-            return 'Today would have been their ' . $this->ordinalNumber($anniversary) . ' wedding anniversary. They were married for ' . $married_years . ' year' . ($married_years === 1 ? '' : 's') . ' until ' . $this->firstName($earliest_deceased) . ' died in ' . $earliest_death_year . '.' . $death_note;
+            $death_note = $years_since_death >= 0 ? ' ' . $this->t('That was %s ago.', $this->yearsText($years_since_death)) : '';
+            return $this->t('Today would have been their %s wedding anniversary. They were married for %s until %s died in %s.', $this->ordinalNumber($anniversary), $this->yearsText($married_years), $this->firstName($earliest_deceased), (string) $earliest_death_year) . $death_note;
         }
 
         return $prefix;
@@ -2224,6 +2272,11 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     private function dailyEmailEnabled(array $settings): bool
     {
         return (string) ($settings['daily_email_enabled'] ?? '0') === '1';
+    }
+
+    private function livingPeopleOnlyEnabled(array $settings): bool
+    {
+        return (string) ($settings['living_people_only'] ?? '0') === '1';
     }
 
     private function relationshipFilterEnabled(array $settings): bool
@@ -2623,6 +2676,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             'personal_preview_enabled' => '1',
             'daily_email_enabled' => (string) ($settings['daily_email_enabled'] ?? '0'),
             'relationship_filter_enabled' => (string) ($settings['relationship_filter_enabled'] ?? '1'),
+            'living_people_only' => (string) ($settings['living_people_only'] ?? '0'),
             'relationship_root_xref' => strtoupper(trim((string) ($settings['relationship_root_xref'] ?? ''))),
             'relationship_max_steps' => (string) ($settings['relationship_max_steps'] ?? '4'),
             'email' => (string) ($settings['email'] ?? ''),
@@ -2644,6 +2698,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
             'personal_preview_enabled' => '1',
             'daily_email_enabled' => (string) ($settings['daily_email_enabled'] ?? '0'),
             'relationship_filter_enabled' => (string) ($settings['relationship_filter_enabled'] ?? '1'),
+            'living_people_only' => (string) ($settings['living_people_only'] ?? '0'),
             'relationship_root_xref' => strtoupper(trim((string) ($settings['relationship_root_xref'] ?? ''))),
             'relationship_max_steps' => (string) ($settings['relationship_max_steps'] ?? '4'),
             'email' => (string) ($settings['email'] ?? ''),
@@ -2714,6 +2769,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
                 'personal_preview_enabled' => '1',
                 'daily_email_enabled' => '1',
                 'relationship_filter_enabled' => (string) ($settings['relationship_filter_enabled'] ?? '1'),
+                'living_people_only' => (string) ($settings['living_people_only'] ?? '0'),
                 'relationship_root_xref' => $root_xref,
                 'relationship_max_steps' => (string) ($settings['relationship_max_steps'] ?? '4'),
             ];
@@ -2935,17 +2991,17 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
 
     private function controlPanelUrl(?Tree $tree = null): string
     {
-        $admin_route = $tree instanceof Tree ? '/' . $tree->name() . '/admin' : '/admin';
-
-        if ($this->currentRequestUsesIndexRoute()) {
-            return $this->indexRouteUrl($admin_route);
-        }
-
         try {
-            return route('admin-control-panel');
+            $url = route('admin-control-panel');
+            if (is_string($url) && $url !== '') {
+                return $url;
+            }
         } catch (Throwable) {
-            return $this->indexRouteUrl($admin_route);
+            // Fall back to a route URL below for webtrees versions or hosting
+            // configurations where the named route is unavailable.
         }
+
+        return $this->indexRouteUrl('/admin');
     }
 
     private function currentRequestUsesIndexRoute(): bool
@@ -3052,6 +3108,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
                 'last_recipients' => '',
                 'last_error' => '',
                 'relationship_filter_enabled' => '1',
+                'living_people_only' => '0',
                 'relationship_root_xref' => '',
                 'relationship_max_steps' => '4',
             ];

@@ -96,7 +96,7 @@ $recent_send_html = (string) ($recent_send_html ?? '');
                 <div class="card-header"><h3 class="h5 mb-0"><?= e($tr('Email delivery')) ?></h3></div>
                 <div class="card-body">
                     <div class="alert alert-info">
-                        <?= $tr('This module sends through the email service configured under %s.', '<strong>Control panel &gt; Website &gt; Sending email</strong>') ?>
+                        <?= e($tr('This module sends through the webtrees email service configured under Control panel > Website > Sending email.')) ?>
                         <?= e($tr('Use authenticated SMTP for reliable delivery. Cron controls the time only.')) ?>
                     </div>
 
@@ -156,7 +156,7 @@ $recent_send_html = (string) ($recent_send_html ?? '');
                         </h4>
                         <div class="accordion-collapse collapse show" id="potts-otd-help-cpanel" aria-labelledby="potts-otd-help-cpanel-heading" data-bs-parent="#potts-otd-scheduler-help">
                             <div class="accordion-body">
-                                <?= $tr('Open %s, choose a daily time and paste the scheduled task command shown above into the command field.', '<strong>Advanced &gt; Cron Jobs</strong>') ?>
+                                <?= e($tr('Open Advanced > Cron Jobs, choose a daily time and paste the scheduled task command shown above into the command field.')) ?>
                             </div>
                         </div>
                     </div>
@@ -167,7 +167,7 @@ $recent_send_html = (string) ($recent_send_html ?? '');
                         </h4>
                         <div class="accordion-collapse collapse" id="potts-otd-help-plesk" aria-labelledby="potts-otd-help-plesk-heading" data-bs-parent="#potts-otd-scheduler-help">
                             <div class="accordion-body">
-                                <?= $tr('Open %s. Choose %s, paste the secure scheduler URL shown above and select a daily time.', '<strong>Websites &amp; Domains &gt; Scheduled Tasks &gt; Add Task</strong>', '<strong>Fetch a URL</strong>') ?>
+                                <?= e($tr('Open Websites & Domains > Scheduled Tasks > Add Task. Choose Fetch a URL, paste the secure scheduler URL shown above and select a daily time.')) ?>
                             </div>
                         </div>
                     </div>
@@ -178,7 +178,7 @@ $recent_send_html = (string) ($recent_send_html ?? '');
                         </h4>
                         <div class="accordion-collapse collapse" id="potts-otd-help-directadmin" aria-labelledby="potts-otd-help-directadmin-heading" data-bs-parent="#potts-otd-scheduler-help">
                             <div class="accordion-body">
-                                <?= $tr('Open %s, enter a daily schedule and paste the scheduled task command shown above.', '<strong>User Level &gt; Advanced Features &gt; Cron Jobs</strong>') ?>
+                                <?= e($tr('Open User Level > Advanced Features > Cron Jobs, enter a daily schedule and paste the scheduled task command shown above.')) ?>
                             </div>
                         </div>
                     </div>
@@ -189,7 +189,7 @@ $recent_send_html = (string) ($recent_send_html ?? '');
                         </h4>
                         <div class="accordion-collapse collapse" id="potts-otd-help-linux" aria-labelledby="potts-otd-help-linux-heading" data-bs-parent="#potts-otd-scheduler-help">
                             <div class="accordion-body">
-                                <?= $tr('Run %s as the web account and add a daily cron expression followed by the command shown above. For example, %s runs at 6:00 am in the cron service\'s timezone.', '<code>crontab -e</code>', '<code>0 6 * * *</code>') ?>
+                                <?= e($tr('Run crontab -e as the web account and add a daily cron expression followed by the command shown above. For example, 0 6 * * * runs at 6:00 am in the cron service timezone.')) ?>
                             </div>
                         </div>
                     </div>
@@ -211,7 +211,7 @@ $recent_send_html = (string) ($recent_send_html ?? '');
                         </h4>
                         <div class="accordion-collapse collapse" id="potts-otd-help-other" aria-labelledby="potts-otd-help-other-heading" data-bs-parent="#potts-otd-scheduler-help">
                             <div class="accordion-body">
-                                <?= $tr('Use the platform\'s Task Scheduler to run a daily HTTPS request with %s, %s or its built-in URL-fetch action. Use the secure URL shown above and confirm the task reports an HTTP 200 response.', '<code>curl</code>', '<code>wget</code>') ?>
+                                <?= e($tr('Use the platform Task Scheduler to run a daily HTTPS request with curl, wget or its built-in URL-fetch action. Use the secure URL shown above and confirm the task reports an HTTP 200 response.')) ?>
                             </div>
                         </div>
                     </div>

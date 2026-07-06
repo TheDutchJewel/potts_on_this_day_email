@@ -9,6 +9,7 @@ webtrees users who opt in from My Page.
 - Lets each registered user opt in or out.
 - Uses each subscriber's linked or selected individual as the relationship root.
 - Filters events by a configurable relationship distance.
+- Can optionally limit results to people who are still living.
 - Builds each email using the subscriber's webtrees privacy permissions.
 - Sends only when matching events exist.
 - Adds age, death and wedding-anniversary details.
@@ -141,6 +142,7 @@ Each signed-in user can choose:
 - their root individual
 - whether relationship filtering is enabled
 - the maximum relationship distance
+- whether to include only events for people who are still living
 
 The module reads the user's current account email address at delivery time.
 
@@ -170,7 +172,7 @@ site settings, subscriber preferences and delivery status.
 - Delivery reputation, SPF, DKIM and DMARC are controlled by the site's email
   provider and DNS configuration, not by this module.
 - Starter translations are included for Dutch, German, French, Spanish, Polish and Portuguese, but native-speaker corrections are welcome.
-- Version 1.0.0 is the first stable release for webtrees 2.2.6 and later 2.2.x releases.
+- Version 1.0.1 is a maintenance release for webtrees 2.2.6 and later 2.2.x releases.
 
 ## Licence
 
